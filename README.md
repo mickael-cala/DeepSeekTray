@@ -39,6 +39,7 @@ Sélectionner le fichier icon.ico.
 4. Allez dans **Compilateur > Créer un exécutable...**
 5. Lancez votre exécutable !
 
+<img width="360" height="302" alt="image" src="https://github.com/user-attachments/assets/891bc56e-1cbd-43ac-a4c4-4585558311bb" />
 
 
 ## ⚙️ Configuration (`tarifs.ini`)
