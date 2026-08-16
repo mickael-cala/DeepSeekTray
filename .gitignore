@@ -1,0 +1,17 @@
+# Exécutables compilés
+*.exe
+*.dll
+
+# Fichiers de configuration spécifiques … l'utilisateur/IDE
+*.pb.cfg
+*.pbp.cfg
+*.chm
+
+# Fichiers temporaires ou logs
+*.log
+*.tmp
+tarifs.ini
+
+# Dossiers générés par des outils externes
+.vscode/
+.vs/

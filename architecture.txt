@@ -1,0 +1,6 @@
+DeepSeek-Pricing-Tray/
+├── architecture.txt
+├── .gitignore
+├── LICENSE
+├── README.md
+└── DeepSeekTray.pb
