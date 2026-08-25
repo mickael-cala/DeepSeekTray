@@ -59,6 +59,16 @@ Procedure.b IsValidTimeFormat(t.s)
   ProcedureReturn #True
 EndProcedure
 
+; Nouvelle fonction : retourne #True si le jour est un jour de semaine (Lun-Ven)
+; wDayOfWeek : 0=Dimanche, 1=Lundi, ..., 6=Samedi
+Procedure.b IsWeekday(dayOfWeek.l)
+  If dayOfWeek >= 1 And dayOfWeek <= 5
+    ProcedureReturn #True
+  Else
+    ProcedureReturn #False
+  EndIf
+EndProcedure
+
 ; ==========================================
 ; CHARGEMENT SÉCURISÉ (APPDATA)
 ; ==========================================
@@ -72,7 +82,7 @@ Procedure LoadConfig()
   If FileSize(fichier$) < 0
     If CreatePreferences(fichier$)
       PreferenceGroup("Horaires_Pointe_UTC")
-      PreferenceComment(" Heures de pointe UTC (HH:MM-HH:MM en 24h, Max " + Str(#MAX_TRANCHES) + " tranches)")
+      PreferenceComment(" Heures de pointe UTC (HH:MM-HH:MM en 24h, Max " + Str(#MAX_TRANCHES) + " tranches) - Applicables uniquement du lundi au vendredi")
       WritePreferenceString("Tranche1", "01:00-04:00")
       WritePreferenceString("Tranche2", "06:00-10:00")
       ClosePreferences()
@@ -127,7 +137,6 @@ EndProcedure
 ; ==========================================
 
 Procedure SetupToastWindow()
-  ; Ajout du drapeau #PB_Window_ScreenCentered pour centrer automatiquement
   OpenWindow(#WinToast, 0, 0, 320, 80, "", #PB_Window_BorderLess | #PB_Window_Tool | #PB_Window_Invisible | #PB_Window_ScreenCentered)
   SetWindowColor(#WinToast, $2D2D2D)
   
@@ -146,7 +155,6 @@ Procedure ShowToast(Title.s, Message.s)
   SetGadgetText(#TxtToastTitle, Title)
   SetGadgetText(#TxtToastMsg, Message)
   
-  ; Plus besoin de calculer la position, la fenêtre est déjà centrée !
   HideWindow(#WinToast, #False)
   StickyWindow(#WinToast, #True)
   
@@ -154,30 +162,66 @@ Procedure ShowToast(Title.s, Message.s)
 EndProcedure
 
 ; ==========================================
-; MOTEUR PRINCIPAL
+; MOTEUR PRINCIPAL (ADAPTÉ AU NOUVEAU TARIF)
 ; ==========================================
 
 Procedure UpdateStatus()
   Protected st.SYSTEMTIME
-  Protected currentMins.l, day.l, i.l, offset.l
+  Protected currentMins.l, dayOfWeek.l, i.l, offset.l
   Protected startB.l, endB.l
   Protected isPeak.b = #False
   Protected minToChange.l = 999999
   Protected nextIsStart.b = #False
+  Protected tempMin.l, currentDay.l, targetDay.l
   
-  GetSystemTime_(@st) 
+  GetSystemTime_(@st)
   currentMins = st\wHour * 60 + st\wMinute
+  dayOfWeek = st\wDayOfWeek   ; 0=Dim, 1=Lun, ..., 6=Sam
   
-  For day = 0 To 1
-    offset = day * 1440
+  ; ---- Déterminer si on est actuellement en pointe ----
+  If IsWeekday(dayOfWeek)
     For i = 0 To NbTranches - 1
-      startB = Slots(i)\StartMin + offset
-      endB = Slots(i)\EndMin + offset
+      ; Gestion des tranches qui passent minuit : on les découpe en deux
+      If Slots(i)\StartMin < Slots(i)\EndMin
+        ; Tranche normale (ex: 01:00-04:00)
+        If currentMins >= Slots(i)\StartMin And currentMins < Slots(i)\EndMin
+          isPeak = #True
+          Break
+        EndIf
+      Else
+        ; Tranche chevauchant minuit (ex: 22:00-02:00) -> on vérifie [start, 1440) ou [0, end)
+        If currentMins >= Slots(i)\StartMin Or currentMins < Slots(i)\EndMin
+          isPeak = #True
+          Break
+        EndIf
+      EndIf
+    Next
+  Else
+    isPeak = #False  ; Week-end : toujours hors pointe
+  EndIf
+  
+  ; ---- Calcul du prochain changement (sur 7 jours) ----
+  For offset = 0 To 6
+    currentDay = (dayOfWeek + offset) % 7
+    If Not IsWeekday(currentDay)
+      Continue ; ce jour n'a pas de tranches de pointe -> on ignore
+    EndIf
+    
+    For i = 0 To NbTranches - 1
+      ; On traite les tranches normales et celles qui chevauchent minuit
+      ; Pour simplifier, on considère que chaque tranche a un début et une fin
+      ; Si StartMin < EndMin : une seule intervalle [start, end)
+      ; Sinon : deux intervalles [start, 1440) et [0, end)
       
-      If day = 0 And currentMins >= Slots(i)\StartMin And currentMins < Slots(i)\EndMin
-        isPeak = #True
+      ; Intervalle 1 : [start, end) si start < end, sinon [start, 1440)
+      startB = Slots(i)\StartMin + offset * 1440
+      If Slots(i)\StartMin < Slots(i)\EndMin
+        endB = Slots(i)\EndMin + offset * 1440
+      Else
+        endB = (offset + 1) * 1440   ; fin de la journée
       EndIf
       
+      ; On ne garde que les événements futurs par rapport à currentMins (jour 0)
       If startB > currentMins And (startB - currentMins) < minToChange
         minToChange = startB - currentMins
         nextIsStart = #True
@@ -186,8 +230,28 @@ Procedure UpdateStatus()
         minToChange = endB - currentMins
         nextIsStart = #False
       EndIf
+      
+      ; Si la tranche chevauche minuit, on a aussi l'intervalle [0, end) du lendemain
+      If Slots(i)\StartMin >= Slots(i)\EndMin
+        startB = (offset + 1) * 1440   ; début du jour suivant (0)
+        endB = Slots(i)\EndMin + (offset + 1) * 1440
+        If startB > currentMins And (startB - currentMins) < minToChange
+          minToChange = startB - currentMins
+          nextIsStart = #True
+        EndIf
+        If endB > currentMins And (endB - currentMins) < minToChange
+          minToChange = endB - currentMins
+          nextIsStart = #False
+        EndIf
+      EndIf
     Next
   Next
+  
+  ; Cas où aucun changement n'est trouvé (normalement pas possible)
+  If minToChange = 999999
+    minToChange = 0
+    nextIsStart = #False
+  EndIf
   
   Protected hRestant = minToChange / 60
   Protected mRestant = minToChange % 60
@@ -195,21 +259,22 @@ Procedure UpdateStatus()
   Protected Tooltip.s
   
   If isPeak
-    EtatActuel = "POINTE"
-    Tooltip = "DeepSeek: POINTE | Fin dans " + TempsRestant
+    EtatActuel = "POINTE (x2)"
+    Tooltip = "DeepSeek: POINTE (x2) | Fin dans " + TempsRestant
     ChangeSysTrayIcon(TrayID, ImageID(ImgPleine))
   Else
-    EtatActuel = "HORS POINTE"
-    Tooltip = "DeepSeek: HORS POINTE | Début dans " + TempsRestant
+    EtatActuel = "HORS POINTE (x0.5)"
+    Tooltip = "DeepSeek: HORS POINTE (x0.5) | Début dans " + TempsRestant
     ChangeSysTrayIcon(TrayID, ImageID(ImgCreuse))
   EndIf
   
   SysTrayIconToolTip(TrayID, Tooltip)
   
+  ; Alerte 5 minutes avant le début de la pointe (uniquement si on est hors pointe et que le prochain événement est un début)
   If isPeak = #False And nextIsStart = #True And minToChange = 5
     If AlertFired = #False
-      ShowToast("Alerte Tarif DeepSeek", "Passage en tarif POINTE dans 5 minutes !")
-      AlertFired = #True 
+      ShowToast("Alerte Tarif DeepSeek", "Passage en tarif POINTE (x2) dans 5 minutes !")
+      AlertFired = #True
     EndIf
   ElseIf minToChange <> 5
     AlertFired = #False
@@ -223,9 +288,9 @@ Procedure ShowMenu(hWnd)
   If IsMenu(0) : FreeMenu(0) : EndIf
   
   CreatePopupMenu(0)
-  MenuItem(10, "Statut : " + EtatActuel) : DisableMenuItem(0, 10, 1) 
+  MenuItem(10, "Statut : " + EtatActuel) : DisableMenuItem(0, 10, 1)
   MenuItem(11, "Heure UTC : " + FormatAMPM(st\wHour, st\wMinute)) : DisableMenuItem(0, 11, 1)
-  MenuItem(12, "Prochain changement : " + TempsRestant) : DisableMenuItem(0, 12, 1) 
+  MenuItem(12, "Prochain changement : " + TempsRestant) : DisableMenuItem(0, 12, 1)
   MenuBar()
   
   MenuItem(15, "--- Horaires de Pointe (" + Str(NbTranches) + "/" + Str(#MAX_TRANCHES) + ") ---") : DisableMenuItem(0, 15, 1)
@@ -233,7 +298,7 @@ Procedure ShowMenu(hWnd)
   For i = 0 To NbTranches - 1
     strStart = FormatAMPM(Slots(i)\StartMin / 60, Slots(i)\StartMin % 60)
     strEnd   = FormatAMPM(Slots(i)\EndMin / 60, Slots(i)\EndMin % 60)
-    MenuItem(40 + i, "  • " + strStart + " à " + strEnd) : DisableMenuItem(0, 40 + i, 1)
+    MenuItem(40 + i, "  • " + strStart + " à " + strEnd + " (UTC, Lun-Ven)") : DisableMenuItem(0, 40 + i, 1)
   Next
   
   MenuBar()
@@ -273,7 +338,7 @@ Repeat
     EndIf
   EndIf
   
-  If Event = #PB_Event_SysTray 
+  If Event = #PB_Event_SysTray
     If EventType() = #PB_EventType_LeftClick
       RunProgram(#URL_CONSO)
     ElseIf EventType() = #PB_EventType_RightClick
@@ -283,13 +348,13 @@ Repeat
   
   If Event = #PB_Event_Menu
     Select EventMenu()
-      Case 1 
+      Case 1
         RunProgram("explorer.exe", Chr(34) + GetUserDirectory(#PB_Directory_ProgramData) + "DeepSeekTray\" + Chr(34), "")
-      Case 2 
+      Case 2
         LoadConfig()
         UpdateStatus()
         ShowToast("Mise à jour", "La configuration a été rechargée avec succès.")
-      Case 3 
+      Case 3
         Break
     EndSelect
   EndIf
@@ -303,9 +368,9 @@ Until Event = #PB_Event_CloseWindow
 
 RemoveSysTrayIcon(TrayID)
 End
+
 ; IDE Options = PureBasic 6.40 (Windows - x64)
-; CursorPosition = 283
-; FirstLine = 272
+; CursorPosition = 370
 ; Folding = --
 ; EnableXP
 ; DPIAware
