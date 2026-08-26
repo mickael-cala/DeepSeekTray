@@ -63,5 +63,10 @@ Pour le modifier :
 ; Heures de pointe UTC (HH:MM-HH:MM en 24h, Max 10 tranches)
 Tranche1 = 01:00-04:00
 Tranche2 = 06:00-10:00
+```
 
+---
 
+## Auteur 
+
+**Mickaël Cala**
