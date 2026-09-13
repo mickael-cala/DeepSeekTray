@@ -1,6 +1,19 @@
-DeepSeek-Pricing-Tray/
-├── architecture.txt
-├── .gitignore
-├── LICENSE
-├── README.md
-└── DeepSeekTray.pb
+DeepSeekTray/
+├── src/                    # Code source PureBasic
+│   ├── DeepSeekTray.pb     # Fichier principal
+│   └── icon.ico            # Icône de fallback (optionnelle)
+├── build/                  # Artifacts de compilation (ignoré par Git)
+│   └── DeepSeekTray.exe    # Exécutable généré
+├── tests/                  # Tests unitaires
+│   ├── test_logic.pb       # Tests en PureBasic
+│   └── test_logic.py       # Tests en Python (pour CI/CD)
+├── docs/                   # Documentation technique
+│   ├── architecture.txt    # Notes d'architecture
+│   └── CHANGELOG.md        # Historique des versions
+├── config/                 # Fichiers de configuration
+│   └── tarifs.ini.example  # Modèle de configuration
+├── build.bat               # Script de compilation automatisé
+├── clean.bat               # Script de nettoyage automatisé
+├── run_tests.bat           # Script d'exécution des tests Python
+├── README.md               # Fichier readme
+└── LICENSE.txt             # Licence du projet

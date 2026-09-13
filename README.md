@@ -28,6 +28,7 @@ DeepSeekTray/
 ├── config/                 # Fichiers de configuration
 │   └── tarifs.ini.example  # Modèle de configuration
 ├── build.bat               # Script de compilation automatisé
+├── clean.bat               # Script de nettoyage automatisé
 ├── run_tests.bat           # Script d'exécution des tests Python
 ├── README.md               # Ce fichier
 └── LICENSE.txt             # Licence du projet
