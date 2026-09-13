@@ -100,4 +100,4 @@ Ce projet est sous licence MIT. Voir le fichier `LICENSE.txt` pour plus de déta
 
 ## 👤 Auteur
 
-Développé par Mickael - Expert Windows/Linux/Termux/PureBasic
+Développé par Mickael CALA - Expertise Windows/Linux/Termux/MacOS/PureBasic
