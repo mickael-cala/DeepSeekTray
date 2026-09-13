@@ -1,72 +1,102 @@
-# DeepSeek API Pricing Tracker 📉
+# DeepSeekTray
 
-Un utilitaire ultra-léger pour la barre des tâches Windows (SysTray) qui surveille en temps réel les horaires de pointe (Peak) et hors pointe (Off-Peak) de l'API DeepSeek, afin d'optimiser les coûts de tokens.
+Utilitaire SysTray léger pour Windows qui affiche dynamiquement le tarif actuel (Heures Pleines / Heures Creuses) basé sur des tranches horaires configurables.
 
-Développé en **PureBasic**, cet outil consomme \~0% de CPU et se veut sécurisé, accessible et non-intrusif.
+## 🚀 Fonctionnalités
 
+- **Léger et non-intrusif** : Consommation CPU ~0%, icône 16x16 générée dynamiquement
+- **Logique métier avancée** : Gestion native des tranches chevauchant minuit (ex: 22:00-02:00)
+- **Exclusion week-end** : Détection automatique des jours ouvrés
+- **Accessibilité** : Double codage couleur + symbole (`!` rouge / `$` vert) pour les daltoniens
+- **Configuration simple** : Fichier INI lisible et modifiable sans recompilation
 
+## 📁 Structure du Projet
 
-## 🤝 Contribution
-
-Les pull requests sont les bienvenues. Pour des changements majeurs, veuillez ouvrir une issue au préalable pour discuter de ce que vous aimeriez changer.
-
-
-
-## 📄 Licence
-
-Ce projet est sous licence MIT - voir le fichier LICENSE pour plus de détails.
-
-
-
-## ✨ Fonctionnalités (UI/UX \& Cyber-sécurisé)
-
-* **Temps Réel UTC :** Calcul précis basé sur l'heure UTC (l'heure de référence des serveurs DeepSeek).
-* **Notifications intelligentes (Toast) :** Alerte visuelle non-intrusive (ne vole pas le focus) 5 minutes avant le passage en tarif fort.
-* **Accessibilité (Colorblind-friendly) :** Les icônes utilisent à la fois des couleurs et des symboles (Point d'exclamation rouge `!` pour la pointe, Dollar vert `$` pour le tarif réduit).
-* **Configuration Dynamique :** Les tranches horaires sont modifiables à chaud via un fichier `.ini` sécurisé.
-* **Sécurité anti-DoS :** Parsing robuste des entrées avec limite stricte du nombre de tranches en mémoire.
-* **Action Rapide :** Un clic gauche sur l'icône ouvre instantanément votre tableau de bord de consommation web.
-
-
-
-## 🚀 Installation \& Compilation
-
-1. Téléchargez et installez [PureBasic](https://www.purebasic.com/) (Version 6.0+ recommandée).
-2. Ouvrez le fichier `DeepSeekTray.pb` dans l'IDE PureBasic.
-3. Allez dans **Compilateur > Options du compilateur.**
-Dans l'onglet Général, coche Utiliser une icône.
-Sélectionner le fichier icon.ico.
-4. Allez dans **Compilateur > Créer un exécutable...**
-5. Lancez votre exécutable !
-
-<img width="360" height="302" alt="image" src="https://github.com/user-attachments/assets/891bc56e-1cbd-43ac-a4c4-4585558311bb" />
-
-
-## ⚙️ Configuration (`tarifs.ini`)
-
-Au premier lancement, le programme génère automatiquement un fichier de configuration sécurisé dans votre dossier utilisateur Windows :
-`%APPDATA%\\\\DeepSeekTray\\\\tarifs.ini`
-
-Pour le modifier :
-
-1. Faites un clic **droit** sur l'icône dans la barre des tâches.
-2. Cliquez sur **Ouvrir tarifs.ini**.
-3. Ajoutez ou modifiez vos tranches horaires (format 24h UTC).
-4. Enregistrez le fichier, refaites un clic droit et choisissez **Actualiser**.
-
-
-
-**Exemple de fichier `tarifs.ini` :**
-
-```ini
-\\\[Horaires\\\_Pointe\\\_UTC]
-; Heures de pointe UTC (HH:MM-HH:MM en 24h, Max 10 tranches)
-Tranche1 = 01:00-04:00
-Tranche2 = 06:00-10:00
+```text
+DeepSeekTray/
+├── src/                    # Code source PureBasic
+│   ├── DeepSeekTray.pb     # Fichier principal
+│   └── icon.ico            # Icône de fallback (optionnelle)
+├── build/                  # Artifacts de compilation (ignoré par Git)
+│   └── DeepSeekTray.exe    # Exécutable généré
+├── tests/                  # Tests unitaires
+│   ├── test_logic.pb       # Tests en PureBasic
+│   └── test_logic.py       # Tests en Python (pour CI/CD)
+├── docs/                   # Documentation technique
+│   ├── architecture.txt    # Notes d'architecture
+│   └── CHANGELOG.md        # Historique des versions
+├── config/                 # Fichiers de configuration
+│   └── tarifs.ini.example  # Modèle de configuration
+├── build.bat               # Script de compilation automatisé
+├── run_tests.bat           # Script d'exécution des tests Python
+├── README.md               # Ce fichier
+└── LICENSE.txt             # Licence du projet
 ```
 
----
+## 🛠️ Installation et Utilisation
 
-## Auteur 
+### 1. Configuration
 
-**Mickaël Cala**
+1. Copiez le fichier modèle : `config\tarifs.ini.example` vers `%APPDATA%\DeepSeekTray\tarifs.ini`
+   *(Chemin complet : `C:\Users\<VotreNom>\AppData\Roaming\DeepSeekTray\tarifs.ini`)*
+2. Éditez le fichier avec vos tranches horaires. Exemple :
+
+```ini
+[Tranche1]
+JourDebut=1
+HeureDebut=08:00
+JourFin=1
+HeureFin=12:00
+EstActive=1
+```
+
+> **Format des jours** : 1 = Lundi, 2 = Mardi, ..., 6 = Samedi, 7 = Dimanche  
+> **Format des heures** : HH:MM (24h, avec zéro initial si nécessaire, ex: `09:30`)
+
+### 2. Compilation (pour les développeurs)
+
+Double-cliquez sur `build.bat` pour compiler automatiquement le projet en version x64 avec DPI Aware.
+
+**Prérequis** : PureBasic installé dans l'un des emplacements suivants :
+- `C:\Program Files\PureBasic\`
+- `C:\Program Files (x86)\PureBasic\`
+- `C:\PureBasic\`
+
+*Si votre installation est ailleurs, modifiez le chemin dans `build.bat`.*
+
+### 3. Tests Unitaires
+
+Pour valider la logique métier (détection des tranches, chevauchement minuit, etc.) :
+
+**Option A : Via Python (recommandé pour CI/CD)**
+```cmd
+run_tests.bat
+```
+*Ou manuellement : `python tests\test_logic.py`*
+
+**Option B : Via PureBasic**
+Ouvrez `tests\test_logic.pb` dans l'IDE PureBasic et exécutez-le. La console affichera le résumé des tests.
+
+## ⚙️ Détails Techniques
+
+- **Langage** : PureBasic 6.x (compatible 5.x)
+- **Architecture** : x64 uniquement
+- **Sous-système** : Windows (GUI)
+- **DPI Aware** : Oui (rendu net sur écrans haute résolution)
+- **Dépendances** : Aucune (bibliothèque standard PureBasic uniquement)
+
+## 🐛 Dépannage
+
+| Symptôme | Solution |
+|----------|----------|
+| L'icône ne s'affiche pas | Vérifiez que le fichier `%APPDATA%\DeepSeekTray\tarifs.ini` existe et est bien formaté |
+| Erreur de compilation | Vérifiez que `pbcompiler.exe` est dans le PATH ou modifiez `build.bat` |
+| Les tests échouent | Vérifiez que vous n'avez pas modifié la logique de `EstDansTranche` sans mettre à jour les tests |
+
+## 📝 Licence
+
+Ce projet est sous licence MIT. Voir le fichier `LICENSE.txt` pour plus de détails.
+
+## 👤 Auteur
+
+Développé par Mickael - Expert Windows/Linux/Termux/PureBasic

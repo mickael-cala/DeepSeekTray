@@ -1,0 +1,65 @@
+; ============================================================================
+; DeepSeekTray - Fichier de configuration des tranches horaires
+; ============================================================================
+; 
+; Emplacement attendu de ce fichier :
+;   %APPDATA%\DeepSeekTray\tarifs.ini
+;   (Soit : C:\Users\<VotreNom>\AppData\Roaming\DeepSeekTray\tarifs.ini)
+;
+; Instructions :
+; 1. Copiez ce fichier et renommez-le en "tarifs.ini"
+; 2. Modifiez les valeurs selon vos besoins
+; 3. Redémarrez DeepSeekTray pour appliquer les changements
+;
+; Format des jours : 1=Lundi, 2=Mardi, 3=Mercredi, 4=Jeudi, 5=Vendredi, 6=Samedi, 7=Dimanche
+; Format des heures : HH:MM (format 24h, avec zéro initial obligatoire, ex: 09:30)
+; EstActive : 1 pour activer la tranche, 0 pour la désactiver
+;
+; ============================================================================
+
+[Tranche1]
+; Exemple : Heures pleines du matin en semaine
+JourDebut=1
+HeureDebut=08:00
+JourFin=1
+HeureFin=12:00
+EstActive=1
+
+[Tranche2]
+; Exemple : Heures creuses de midi en semaine
+JourDebut=1
+HeureDebut=12:00
+JourFin=1
+HeureFin=14:00
+EstActive=1
+
+[Tranche3]
+; Exemple : Heures pleines de l'après-midi en semaine
+JourDebut=1
+HeureDebut=14:00
+JourFin=1
+HeureFin=18:00
+EstActive=1
+
+[Tranche4]
+; Exemple : Tranche chevauchant minuit (Vendredi 22h -> Samedi 02h)
+; Note : Les week-ends (JourDebut=6 ou 7) sont automatiquement ignorés 
+; par la logique métier si vous avez activé l'exclusion des week-ends.
+JourDebut=5
+HeureDebut=22:00
+JourFin=6
+HeureFin=02:00
+EstActive=0
+
+[Tranche5]
+; Exemple : Tranche Dimanche soir -> Lundi matin
+JourDebut=7
+HeureDebut=22:00
+JourFin=1
+HeureFin=06:00
+EstActive=0
+
+; ============================================================================
+; Vous pouvez ajouter jusqu'à 10 tranches (Tranche1 à Tranche10)
+; Les tranches avec EstActive=0 sont ignorées lors du chargement
+; ============================================================================

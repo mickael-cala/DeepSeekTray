@@ -1,8 +1,9 @@
-# Exécutables compilés
+# Exécutables et artefacts de build
+build/
 *.exe
 *.dll
 
-# Fichiers de configuration spécifiques … l'utilisateur/IDE
+# Fichiers de configuration spécifiques à l'utilisateur/IDE
 *.pb.cfg
 *.pbp.cfg
 *.chm
@@ -10,6 +11,9 @@
 # Fichiers temporaires ou logs
 *.log
 *.tmp
+
+# Fichiers de configuration locale (ne pas commiter les vrais paramètres)
+config/tarifs.ini
 tarifs.ini
 
 # Dossiers générés par des outils externes
